@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+        <script type="text/javascript" src="/brython.js"></script>
+        <script type="text/javascript" src="/brython_stdlib.js"></script>
+        <script type="text/python" src="/blocks.py" ></script>
+        <title>Blocks in Brython</title>
+		<link href="//mincss.com/entireframework.min.css" rel="stylesheet" type="text/css">
+	</head>
+    <body onload="brython(1)">
+    		<nav class="nav" tabindex="-1" onclick="this.focus()">
+			<div class="container">
+				<a class="pagename current" href="#">Blocks in Brython</a>
+				<a href="https://www.barwap.com/projects/">Barwap.com</a>
+			</div>
+		</nav>
+		<button class="btn-close btn btn-sm">×</button>
+		<div class="container">
+            <p>An attempt to have blocks running, from the browser using Python</p>
+        </div>
+		<div class="container">
+            <div class="row">
+                <div class="col c4">
+                    <canvas id="grid" width="0" height="0"></canvas>
+                </div>
+                <div class="col c4">
+                    <p>Next</p>
+                    <canvas id="next" width="0" height="0"></canvas>
+                </div>
+            </div>
+        </div>
+	</body>
+</html>
