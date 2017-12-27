@@ -10,6 +10,8 @@ WHITE = 0
 GRAY = 1
 BOARDER = 15
 
+tick_timer = None
+
 def paint_block(canvas_name, x, y, n):
     if canvas_name == "grid":
         height = h
@@ -48,29 +50,37 @@ def paint_block(canvas_name, x, y, n):
 class PlayingGrid():
     def __init__(self):
         # This looks the wrong way around but it create an x,y array
-        self.grid = [[WHITE for y in range(h)] for x in range(w)]
+        self.grid = [[WHITE for x in range(w)] for y in range(h)]
+        self.set_boarder()
+    def set_boarder(self):
         for x in range(0, boarder_size):
             for y in range(0,h):
-                self.grid[x][y] = BOARDER
+                self.grid[y][x] = BOARDER
         for x in range(w-boarder_size, w):
             for y in range(0,h):
-                self.grid[x][y] = BOARDER
+                self.grid[y][x] = BOARDER
         for x in range(0, w):
             for y in range(0,boarder_size):
-                self.grid[x][y] = BOARDER
+                self.grid[y][x] = BOARDER
     def remove_complete_lines(self, by):
         removed = 0
         for y in range(by, by+4):
-            row = [i[y] for i in self.grid]
-            if not WHITE in row and y>boarder_size-1:
-                print(row)
+            # All must be mote white and not the same (Boarder)
+            if not WHITE in self.grid[y] and \
+               not all(x == self.grid[y][0] for x in self.grid[y]):
+                self.grid.remove(self.grid[y])
+                removed = removed + 1
+                new_row = [WHITE for x in range(w)]
+                self.grid.append(new_row)
+        if removed:
+            self.set_boarder()
 
 
     def draw_inner_grid(self):
         for x in range(boarder_size,w-boarder_size):
             for y in range(boarder_size,h):
                 paint_block("grid", x, y, 
-                            self.grid[x][y])
+                            self.grid[y][x])
     def draw_boarder(self):
         for x in range(0, boarder_size):
             for y in range(0,h):
@@ -232,22 +242,22 @@ class Block():
         for x in range(0,4):
             for y in range(0,4):
                 paint_block(canvas_name, x+self.x, y+self.y, 
-                            self.grid[x][3-y])
+                            self.grid[3-y][x])
 
 def paint_block_on_grid(offset_x, offset_y):
     for x in range(-1,5):
         for y in range(-1,5):
             if ((x == -1 or x == 4) or (y == -1 or y == 4)):
-                n = play_grid.grid[current_block.x + x][current_block.y + y]
+                n = play_grid.grid[current_block.y + y][current_block.x + x]
             else:
-                n = current_block.grid[x][3-y] + play_grid.grid[current_block.x + x][current_block.y + y]
+                n = current_block.grid[3-y][x] + play_grid.grid[current_block.y + y][current_block.x + x]
             paint_block("grid", x+current_block.x, y+current_block.y, n)
 
 def clash_blocks():
     clash = False
     for x in range(0,4):
         for y in range(0,4):
-            b = current_block.grid[x][y] + play_grid.grid[x+current_block.x][(3-y)+current_block.y]
+            b = current_block.grid[y][x] + play_grid.grid[(3-y)+current_block.y][x+current_block.x]
             if b>15:
                 clash = True
     return clash
@@ -255,8 +265,8 @@ def clash_blocks():
 def freeze_current_block():
     for x in range(0,4):
         for y in range(0,4):
-            if current_block.grid[x][3-y] > 0:
-                play_grid.grid[x+current_block.x][y+current_block.y] = current_block.grid[x][3-y]
+            if current_block.grid[3-y][x] > 0:
+                play_grid.grid[y+current_block.y][x+current_block.x] = current_block.grid[3-y][x]
 
 
 def test_new_position(movement):
@@ -308,6 +318,13 @@ def key_code(ev):
     if ev.keyCode == 38 or ev.keyCode == 87:
         test_new_position("rotate_c")
 
+def stop_timer(ev):
+    timer.clear_interval(tick_timer)
+
+def start_timer(ev):
+    tick_timer = timer.set_interval(tick, 500)
+
+
 def tick():
     global current_block, next_block
     if not test_new_position("down"):
@@ -321,6 +338,7 @@ def tick():
         play_grid.draw_grid()
 
 def init():
+    global tick_timer
     element = document["grid"]
     element.width = w*block_size
     element.height = h*block_size
@@ -334,13 +352,15 @@ def init():
     next_block.paint("next")    
     current_block.x = w/2 - 2
     current_block.y = h - boarder_size
+    tick_timer = timer.set_interval(tick, 500)
 
 play_grid = PlayingGrid()
 current_block = Block()
 next_block = Block()
-document.onkeydown = key_code
-#document["grid"].bind("keydown", keyCode)
-
 
 init()
-timer.set_interval(tick, 500)
+
+
+document["stop"].bind('click',stop_timer)
+document.onkeydown = key_code
+
