@@ -5,7 +5,7 @@ boarder_size = 3
 w = 10 + boarder_size*2
 h = 20 + boarder_size*2
 block_size = 20
-BOARDER = 128
+BOARDER = 15
 
 def paint_block(canvas_name, x, y, n):
     if canvas_name == "grid":
@@ -60,15 +60,19 @@ class PlayingGrid():
         for x in range(0, boarder_size):
             for y in range(0,h):
                 paint_block("grid", x, y, 
-                            self.grid[x][y])
+                            BOARDER)
         for x in range(w-boarder_size, w):
             for y in range(0,h):
                 paint_block("grid", x, y, 
-                            self.grid[x][y])
+                            BOARDER)
         for x in range(0, w):
             for y in range(0,boarder_size):
                 paint_block("grid", x, y, 
-                            self.grid[x][y])
+                            BOARDER)
+        for x in range(0, w):
+            for y in range(h-boarder_size, h):
+                paint_block("grid", x, y, 
+                            BOARDER)
 
 
 class Block():
@@ -195,15 +199,16 @@ class Block():
                          [ 0, 14, 14,  0], 
                          [ 0, 14,  0,  0], 
                          [ 0, 14,  0,  0]]
-    def rotate_clock(self):
+    def rotate_anticlock(self):
         self.rotation = self.rotation -1
         if self.rotation == -1:
             self.rotation = 3
-    def rotate_anticlock(self):
+        self.sytle_grid()
+    def rotate_clock(self):
         self.rotation = self.rotation +1
         if self.rotation == 4:
             self.rotation = 0
-
+        self.sytle_grid()
     def paint(self, canvas_name):
         for x in range(0,4):
             for y in range(0,4):
@@ -216,46 +221,76 @@ def redraw():
     play_grid.draw_boarder()
 
 
+def clash_blocks():
+    clash = False
+    for x in range(0,4):
+        for y in range(0,4):
+            b = current_block.grid[x][y] + play_grid.grid[x+current_block.x][(3-y)+current_block.y]
+            if b>16:
+                clash = True
+    return clash
+                
+def freeze_current_block():
+    print("Freeze!")
+    for x in range(0,4):
+        for y in range(0,4):
+            if current_block.grid[x][3-y] > 0:
+                play_grid.grid[x+current_block.x][y+current_block.y] = current_block.grid[x][3-y]
+
+
 def test_new_position(movement):
     if movement == "left":
-        return True
+        current_block.x = current_block.x -1
     if movement == "right":
-        return True
-    else:
-        return False
-        
-
-def try_to_move(movement):
-    if test_new_position(movement):
+        current_block.x = current_block.x +1
+    if movement == "down":
+        current_block.y = current_block.y -1
+    if movement == "rotate_c":
+        current_block.rotate_clock()
+    if clash_blocks():
         if movement == "left":
-            current_block.x = current_block.x -1
-        if movement == "right":
             current_block.x = current_block.x +1
+            return False
+        if movement == "right":
+            current_block.x = current_block.x -1
+            return False
+        if movement == "down":
+            current_block.y = current_block.y +1
+            return False
+        if movement == "rotate_c":
+            current_block.rotate_anticlock()
+            return False
+    else:
         redraw()
+        return True
 
 def keyCode(ev):
     trace = document["traceKeyCode"]
     trace.text = f'event {ev.type}, keyCode : {ev.keyCode}'
     ev.stopPropagation()
-    # Move left either left arrow of a
+    # Key codes for Up, Down, Left, Right, wasd
     if ev.keyCode == 37 or ev.keyCode == 65:
-        try_to_move("left")
+        test_new_position("left")
     if ev.keyCode == 39 or ev.keyCode == 68:
-        try_to_move("right")
-
+        test_new_position("right")
+    if ev.keyCode == 38 or ev.keyCode == 87:
+        test_new_position("rotate_c")
 
 def tick():
-    global current_block
-    next_block.rotate_clock()
-    next_block.sytle_grid()
-    next_block.paint("next")
-
-    current_block.y = current_block.y -1
-    redraw()
-    if current_block.y == boarder_size:
-        current_block = Block()
+    global current_block, next_block
+#    next_block.rotate_clock()
+#    next_block.sytle_grid()
+#    next_block.paint("next")
+    
+    print(current_block.x, current_block.y)
+    if not test_new_position("down"):
+        freeze_current_block()        
+        current_block = next_block
         current_block.x = w/2 - 2
-        current_block.y = h - 3
+        current_block.y = h - 6
+        next_block = Block()
+        next_block.paint("next")    
+    redraw()
 
 def init():
     element = document["grid"]
@@ -270,7 +305,7 @@ def init():
     play_grid.draw_grid()
     next_block.paint("next")    
     current_block.x = w/2 - 2
-    current_block.y = h - 3
+    current_block.y = h - 6
 
 play_grid = PlayingGrid()
 current_block = Block()
