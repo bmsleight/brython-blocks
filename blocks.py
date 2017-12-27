@@ -1,20 +1,26 @@
 from browser import document, alert, html, timer
 from random import randint
 
-boarder_size = 3
+boarder_size = 4
 w = 10 + boarder_size*2
 h = 20 + boarder_size*2
 block_size = 20
+
+WHITE = 0
+GRAY = 1
 BOARDER = 15
 
 def paint_block(canvas_name, x, y, n):
     if canvas_name == "grid":
         height = h
-        blank = "LightGray"
     else:
         height = 3
-        blank = "White"
-    if n == 8:
+
+    if n == WHITE:
+        fill_style = "White"
+    elif n == GRAY:
+        fill_style = "Gray"
+    elif n == 8:
         fill_style = "Red"
     elif n == 9:
         fill_style = "Blue"
@@ -31,17 +37,18 @@ def paint_block(canvas_name, x, y, n):
     elif n == BOARDER:
         fill_style = "Black"
     else:
-        fill_style = blank
-    canvas=document[canvas_name].getContext("2d")
-    canvas.beginPath()
-    canvas.rect(x*block_size, (height-y)*block_size, block_size, block_size)
-    canvas.fillStyle = fill_style 
-    canvas.fill()
+        fill_style = "Pink"
+    if fill_style:
+        canvas=document[canvas_name].getContext("2d")
+        canvas.beginPath()
+        canvas.rect(x*block_size, (height-y)*block_size, block_size, block_size)
+        canvas.fillStyle = fill_style 
+        canvas.fill()
 
 class PlayingGrid():
     def __init__(self):
         # This looks the wrong way around but it create an x,y array
-        self.grid = [[0 for y in range(h)] for x in range(w)]
+        self.grid = [[WHITE for y in range(h)] for x in range(w)]
         for x in range(0, boarder_size):
             for y in range(0,h):
                 self.grid[x][y] = BOARDER
@@ -51,7 +58,15 @@ class PlayingGrid():
         for x in range(0, w):
             for y in range(0,boarder_size):
                 self.grid[x][y] = BOARDER
-    def draw_grid(self):
+    def remove_complete_lines(self, by):
+        removed = 0
+        for y in range(by, by+4):
+            row = [i[y] for i in self.grid]
+            if not WHITE in row and y>boarder_size-1:
+                print(row)
+
+
+    def draw_inner_grid(self):
         for x in range(boarder_size,w-boarder_size):
             for y in range(boarder_size,h):
                 paint_block("grid", x, y, 
@@ -73,6 +88,10 @@ class PlayingGrid():
             for y in range(h-boarder_size, h):
                 paint_block("grid", x, y, 
                             BOARDER)
+    def draw_grid(self):
+        self.draw_boarder()
+        self.draw_inner_grid()
+        
 
 
 class Block():
@@ -92,7 +111,7 @@ class Block():
         # if rotate "true", its skips left to right
         #    So we precalculate the rotations so make them better
         #Debug
-        document["details"].text = str(self.style) + " " + str(self.rotation)
+        # document["details"].text = str(self.style) + " " + str(self.rotation)
         #I
         if self.style == 0 and \
           (self.rotation == 0 or self.rotation == 2):
@@ -215,23 +234,25 @@ class Block():
                 paint_block(canvas_name, x+self.x, y+self.y, 
                             self.grid[x][3-y])
 
-def redraw():
-    play_grid.draw_grid()
-    current_block.paint("grid")
-    play_grid.draw_boarder()
-
+def paint_block_on_grid(offset_x, offset_y):
+    for x in range(-1,5):
+        for y in range(-1,5):
+            if ((x == -1 or x == 4) or (y == -1 or y == 4)):
+                n = play_grid.grid[current_block.x + x][current_block.y + y]
+            else:
+                n = current_block.grid[x][3-y] + play_grid.grid[current_block.x + x][current_block.y + y]
+            paint_block("grid", x+current_block.x, y+current_block.y, n)
 
 def clash_blocks():
     clash = False
     for x in range(0,4):
         for y in range(0,4):
             b = current_block.grid[x][y] + play_grid.grid[x+current_block.x][(3-y)+current_block.y]
-            if b>16:
+            if b>15:
                 clash = True
     return clash
                 
 def freeze_current_block():
-    print("Freeze!")
     for x in range(0,4):
         for y in range(0,4):
             if current_block.grid[x][3-y] > 0:
@@ -239,14 +260,22 @@ def freeze_current_block():
 
 
 def test_new_position(movement):
+    offset_x = 0
+    offset_y = 0
     if movement == "left":
         current_block.x = current_block.x -1
-    if movement == "right":
+        offset_x = +1
+    elif movement == "right":
         current_block.x = current_block.x +1
-    if movement == "down":
+        offset_x = -1
+    elif movement == "down":
         current_block.y = current_block.y -1
-    if movement == "rotate_c":
+        offset_y = -1
+    elif movement == "rotate_c":
         current_block.rotate_clock()
+    else:
+        pass
+                
     if clash_blocks():
         if movement == "left":
             current_block.x = current_block.x +1
@@ -261,36 +290,35 @@ def test_new_position(movement):
             current_block.rotate_anticlock()
             return False
     else:
-        redraw()
+        paint_block_on_grid(offset_x, offset_y)
         return True
 
-def keyCode(ev):
-    trace = document["traceKeyCode"]
-    trace.text = f'event {ev.type}, keyCode : {ev.keyCode}'
+def key_code(ev):
+    # Debug
+    #trace = document["traceKeyCode"]
+    #trace.text = f'event {ev.type}, keyCode : {ev.keyCode}'
     ev.stopPropagation()
     # Key codes for Up, Down, Left, Right, wasd
     if ev.keyCode == 37 or ev.keyCode == 65:
         test_new_position("left")
     if ev.keyCode == 39 or ev.keyCode == 68:
         test_new_position("right")
+    if ev.keyCode == 40 or ev.keyCode == 83:
+        test_new_position("down")
     if ev.keyCode == 38 or ev.keyCode == 87:
         test_new_position("rotate_c")
 
 def tick():
     global current_block, next_block
-#    next_block.rotate_clock()
-#    next_block.sytle_grid()
-#    next_block.paint("next")
-    
-    print(current_block.x, current_block.y)
     if not test_new_position("down"):
-        freeze_current_block()        
+        freeze_current_block()
+        play_grid.remove_complete_lines(current_block.y)
         current_block = next_block
         current_block.x = w/2 - 2
-        current_block.y = h - 6
+        current_block.y = h - boarder_size
         next_block = Block()
-        next_block.paint("next")    
-    redraw()
+        next_block.paint("next") 
+        play_grid.draw_grid()
 
 def init():
     element = document["grid"]
@@ -305,14 +333,14 @@ def init():
     play_grid.draw_grid()
     next_block.paint("next")    
     current_block.x = w/2 - 2
-    current_block.y = h - 6
+    current_block.y = h - boarder_size
 
 play_grid = PlayingGrid()
 current_block = Block()
 next_block = Block()
-document.onkeydown = keyCode
+document.onkeydown = key_code
 #document["grid"].bind("keydown", keyCode)
 
 
 init()
-timer.set_interval(tick, 2000)
+timer.set_interval(tick, 500)
