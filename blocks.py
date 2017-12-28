@@ -5,14 +5,24 @@ boarder_size = 5
 w = 10 + boarder_size*2
 h = 20 + boarder_size*2
 block_size = 20
-
-WHITE = 0
-GRAY = 1
-BOARDER = 15
-BOARDER_TOP = 14
-
 tick_timer = None
 lines = 0
+
+# Clash is when block + block >31
+# Empty Blocks
+WHITE       = 0
+GRAY        = 1
+# Hard Blocks
+BOARDER     = 16
+BOARDER_TOP = 17
+RED         = 18
+BLUE        = 19
+ORANGE      = 20
+YELLOW      = 21
+MAGENTA     = 22
+CYAN        = 23
+GREEN       = 24
+
 
 def debug_to_browser(text):
     debug = document["debug"]
@@ -24,37 +34,34 @@ def update_lines_complete(removed):
     document["total"].text = lines
 
 def paint_block(canvas_name, x, y, n):
-    if canvas_name == "grid":
-        height = h
-    else:
-        height = 3
-
     if n == WHITE:
         fill_style = "White"
     elif n == GRAY:
         fill_style = "Gray"
-    elif n == 8:
+    elif n == RED:
         fill_style = "Red"
-    elif n == 9:
+    elif n == BLUE:
         fill_style = "Blue"
-    elif n == 10:
+    elif n == ORANGE:
         fill_style = "Orange"
-    elif n == 11:
+    elif n == YELLOW:
         fill_style = "Yellow"
-    elif n == 12:
+    elif n == MAGENTA:
         fill_style = "Magenta"
-    elif n == 13:
+    elif n == CYAN:
         fill_style = "Cyan"
-    elif n == 14:
+    elif n == GREEN:
         fill_style = "Green"
     elif n == BOARDER:
         fill_style = "Black"
+    elif n == BOARDER_TOP:
+        fill_style = "Pink"
     else:
         fill_style = "Pink"
     if fill_style:
         canvas=document[canvas_name].getContext("2d")
         canvas.beginPath()
-        canvas.rect(x*block_size, (height-y)*block_size, block_size, block_size)
+        canvas.rect(x*block_size, y*block_size, block_size, block_size)
         canvas.fillStyle = fill_style 
         canvas.fill()
 
@@ -64,28 +71,15 @@ class PlayingGrid():
         self.grid = [[WHITE for x in range(w)] for y in range(h)]
         self.set_boarder()
     def set_boarder(self):
-        for x in range(0, boarder_size):
-            for y in range(0,h-boarder_size):
-                self.grid[y][x] = BOARDER
-        for x in range(w-boarder_size, w):
-            for y in range(0,h-boarder_size):
-                self.grid[y][x] = BOARDER
-
-        for x in range(0, boarder_size):
-            for y in range(h-boarder_size,h):
-                self.grid[y][x] = BOARDER_TOP
-        for x in range(w-boarder_size, w):
-            for y in range(h-boarder_size,h):
-                self.grid[y][x] = BOARDER_TOP
-
-
         for x in range(0, w):
-            for y in range(0,boarder_size):
+            for y in range(0, boarder_size):
                 self.grid[y][x] = BOARDER
-
-
-
-
+        for x in range(0, boarder_size):
+            for y in range(0, h-boarder_size):
+                self.grid[y][x] = BOARDER
+        for x in range(w-boarder_size, w):
+            for y in range(0, h-boarder_size):
+                self.grid[y][x] = BOARDER
     def remove_complete_lines(self, by):
         removed = 0
         for row in self.grid[by:by+4]:
@@ -99,7 +93,6 @@ class PlayingGrid():
             update_lines_complete(removed)
             self.set_boarder()
         return removed
-
 
     def draw_inner_grid(self):
         for x in range(0,w):
@@ -130,109 +123,109 @@ class Block():
         #I
         if self.style == 0 and \
           (self.rotation == 0 or self.rotation == 2):
-            self.grid = [[ 0,  0,  0,  0], 
-                         [ 0,  0,  0,  0], 
-                         [ 8,  8,  8,  8], 
-                         [ 0,  0,  0,  0]]
+            self.grid = [[   0,   0,   0,   0], 
+                         [   0,   0,   0,   0], 
+                         [ RED, RED, RED, RED], 
+                         [   0,   0,   0,   0]]
         if self.style == 0 and \
           (self.rotation == 1 or self.rotation == 3):
-            self.grid = [[ 0,  8,  0,  0], 
-                         [ 0,  8,  0,  0], 
-                         [ 0,  8,  0,  0], 
-                         [ 0,  8,  0,  0]]
+            self.grid = [[   0, RED,   0,   0], 
+                         [   0, RED,   0,   0], 
+                         [   0, RED,   0,   0], 
+                         [   0, RED,   0,   0]]
         # O
         if self.style == 1:
-            self.grid = [[ 0,  0,  0,  0], 
-                         [ 0,  9,  9,  0], 
-                         [ 0,  9,  9,  0], 
-                         [ 0,  0,  0,  0]]
+            self.grid = [[ 0,    0,    0,  0], 
+                         [ 0, BLUE, BLUE,  0], 
+                         [ 0, BLUE, BLUE,  0], 
+                         [ 0,    0,    0,  0]]
         #S
         if self.style == 2 and \
           (self.rotation == 0 or self.rotation == 2):
-            self.grid = [[ 0,  0,  0,  0], 
-                         [ 0,  0, 10, 10], 
-                         [ 0, 10, 10,  0], 
-                         [ 0,  0,  0,  0]]
+            self.grid = [[ 0,      0,      0,      0], 
+                         [ 0,      0, ORANGE, ORANGE], 
+                         [ 0, ORANGE, ORANGE,      0], 
+                         [ 0,      0,      0,      0]]
         if self.style == 2 and \
           (self.rotation == 1 or self.rotation == 3):
-            self.grid = [[ 0,  0,  0,  0], 
-                         [ 0, 10,  0,  0], 
-                         [ 0, 10, 10,  0], 
-                         [ 0,  0, 10,  0]]
+            self.grid = [[ 0,      0,      0,     0], 
+                         [ 0, ORANGE,      0,     0], 
+                         [ 0, ORANGE, ORANGE,     0], 
+                         [ 0,      0, ORANGE,     0]]
         #Z
         if self.style == 3 and \
           (self.rotation == 0 or self.rotation == 2):
-            self.grid = [[ 0,  0,  0,  0], 
-                         [ 0,  0,  0,  0], 
-                         [ 0, 11, 11,  0], 
-                         [ 0,  0, 11, 11]]
+            self.grid = [[ 0,      0,      0,      0], 
+                         [ 0,      0,      0,      0], 
+                         [ 0, YELLOW, YELLOW,      0], 
+                         [ 0,      0, YELLOW, YELLOW]]
         if self.style == 3 and \
           (self.rotation == 1 or self.rotation == 3):
-            self.grid = [[ 0,  0,  0,  0], 
-                         [ 0,  0, 11,  0], 
-                         [ 0, 11, 11,  0], 
-                         [ 0, 11,  0,  0]]
+            self.grid = [[ 0,      0,      0,  0], 
+                         [ 0,      0, YELLOW,  0], 
+                         [ 0, YELLOW, YELLOW,  0], 
+                         [ 0, YELLOW,      0,  0]]
         if self.style == 4 and self.rotation == 0:
             self.grid = [[ 0,  0,  0,  0], 
-                         [ 0, 12,  0,  0], 
-                         [12, 12, 12,  0], 
+                         [ 0, MAGENTA,  0,  0], 
+                         [MAGENTA, MAGENTA, MAGENTA,  0], 
                          [ 0,  0,  0,  0]]
         if self.style == 4 and self.rotation == 1:
             self.grid = [[ 0,  0,  0,  0], 
-                         [ 0, 12,  0,  0], 
-                         [12, 12,  0,  0], 
-                         [ 0, 12,  0,  0]]
+                         [ 0, MAGENTA,  0,  0], 
+                         [MAGENTA, MAGENTA,  0,  0], 
+                         [ 0, MAGENTA,  0,  0]]
         if self.style == 4 and self.rotation == 2:
             self.grid = [[ 0,  0,  0,  0], 
                          [ 0,  0,  0,  0], 
-                         [12, 12, 12,  0], 
-                         [ 0, 12,  0,  0]]
+                         [MAGENTA, MAGENTA, MAGENTA,  0], 
+                         [ 0, MAGENTA,  0,  0]]
         if self.style == 4 and self.rotation == 3:
             self.grid = [[ 0,  0,  0,  0], 
-                         [ 0, 12,  0,  0], 
-                         [ 0, 12, 12,  0], 
-                         [ 0, 12,  0,  0]]
+                         [ 0, MAGENTA,  0,  0], 
+                         [ 0, MAGENTA, MAGENTA,  0], 
+                         [ 0, MAGENTA,  0,  0]]
         # L
         if self.style == 5 and self.rotation == 0:
             self.grid = [[ 0,  0,  0,  0], 
-                         [ 0,  0, 13,  0], 
-                         [13, 13, 13,  0], 
+                         [ 0,  0, CYAN,  0], 
+                         [CYAN, CYAN, CYAN,  0], 
                          [ 0,  0,  0,  0]]
         if self.style == 5 and self.rotation == 1:
             self.grid = [[ 0,  0,  0,  0], 
-                         [13, 13,  0,  0], 
-                         [ 0, 13,  0,  0], 
-                         [ 0, 13,  0,  0]]
+                         [CYAN, CYAN,  0,  0], 
+                         [ 0, CYAN,  0,  0], 
+                         [ 0, CYAN,  0,  0]]
         if self.style == 5 and self.rotation == 2:
             self.grid = [[ 0,  0,  0,  0], 
                          [ 0,  0,  0,  0], 
-                         [13, 13, 13,  0], 
-                         [13,  0,  0,  0]]
+                         [CYAN, CYAN, CYAN,  0], 
+                         [CYAN,  0,  0,  0]]
         if self.style == 5 and self.rotation == 3:
             self.grid = [[ 0,  0,  0,  0], 
-                         [ 0, 13,  0,  0], 
-                         [ 0, 13,  0,  0], 
-                         [ 0, 13, 13,  0]]
+                         [ 0, CYAN,  0,  0], 
+                         [ 0, CYAN,  0,  0], 
+                         [ 0, CYAN, CYAN,  0]]
         if self.style == 6 and self.rotation == 0:
             self.grid = [[ 0,  0,  0,  0], 
-                         [14,  0,  0,  0], 
-                         [14, 14, 14,  0], 
+                         [GREEN,  0,  0,  0], 
+                         [GREEN, GREEN, GREEN,  0], 
                          [ 0,  0,  0,  0]]
         if self.style == 6 and self.rotation == 1:
             self.grid = [[ 0,  0,  0,  0], 
-                         [ 0, 14,  0,  0], 
-                         [ 0, 14,  0,  0], 
-                         [14, 14,  0,  0]]
+                         [ 0, GREEN,  0,  0], 
+                         [ 0, GREEN,  0,  0], 
+                         [GREEN, GREEN,  0,  0]]
         if self.style == 6 and self.rotation == 2:
             self.grid = [[ 0,  0,  0,  0], 
                          [ 0,  0,  0,  0], 
-                         [14, 14, 14,  0], 
-                         [ 0,  0, 14,  0]]
+                         [GREEN, GREEN, GREEN,  0], 
+                         [ 0,  0, GREEN,  0]]
         if self.style == 6 and self.rotation == 3:
             self.grid = [[ 0,  0,  0,  0], 
-                         [ 0, 14, 14,  0], 
-                         [ 0, 14,  0,  0], 
-                         [ 0, 14,  0,  0]]
+                         [ 0, GREEN, GREEN,  0], 
+                         [ 0, GREEN,  0,  0], 
+                         [ 0, GREEN,  0,  0]]
     def rotate_anticlock(self):
         self.rotation = self.rotation -1
         if self.rotation == -1:
@@ -247,32 +240,32 @@ class Block():
         for x in range(0,4):
             for y in range(0,4):
                 paint_block(canvas_name, x+self.x, y+self.y, 
-                            self.grid[3-y][x])
+                            self.grid[y][x])
 
+# Replace with function ?
 def paint_block_on_grid(offset_x, offset_y):
     for x in range(-1,5):
         for y in range(-1,5):
             if ((x == -1 or x == 4) or (y == -1 or y == 4)):
                 n = play_grid.grid[current_block.y + y][current_block.x + x]
             else:
-                n = current_block.grid[3-y][x] + play_grid.grid[current_block.y + y][current_block.x + x]
+                n = current_block.grid[y][x] + play_grid.grid[current_block.y + y][current_block.x + x]
             paint_block("grid", x+current_block.x, y+current_block.y, n)
 
 def clash_blocks():
     clash = False
     for x in range(0,4):
         for y in range(0,4):
-            b = current_block.grid[y][x] + play_grid.grid[(3-y)+current_block.y][x+current_block.x]
-            if b>15:
+            b = current_block.grid[y][x] + play_grid.grid[y+current_block.y][x+current_block.x]
+            if b>31:
                 clash = True
     return clash
-                
+
 def freeze_current_block():
     for x in range(0,4):
         for y in range(0,4):
-            if current_block.grid[3-y][x] > 0:
-                play_grid.grid[y+current_block.y][x+current_block.x] = current_block.grid[3-y][x]
-
+            if current_block.grid[y][x] > 15:
+                play_grid.grid[y+current_block.y][x+current_block.x] = current_block.grid[y][x]
 
 def test_new_position(movement):
     offset_x = 0
@@ -290,7 +283,6 @@ def test_new_position(movement):
         current_block.rotate_clock()
     else:
         pass
-                
     if clash_blocks():
         if movement == "left":
             current_block.x = current_block.x +1
@@ -333,10 +325,11 @@ def tick():
     global current_block, next_block
     if not test_new_position("down"):
         freeze_current_block()
+        play_grid.remove_complete_lines(current_block.y)
         if not play_grid.remove_complete_lines(current_block.y) and \
            not current_block.y < (h - boarder_size):
-            timer.clear_interval(tick_timer)
-            alert("Game Over")
+           timer.clear_interval(tick_timer)
+           alert("Game Over")
         current_block = next_block
         current_block.x = w/2 - 2
         current_block.y = h - boarder_size
@@ -366,8 +359,7 @@ def init():
 
 
 play_grid = PlayingGrid()
+play_grid.draw_grid()
 current_block = Block()
 next_block = Block()
 init()
-
-
