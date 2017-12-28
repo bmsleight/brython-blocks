@@ -3,12 +3,13 @@ from random import randint
 
 boarder_size = 5
 w = 10 + boarder_size*2
-h = 20 + boarder_size*2
+h = 15 + boarder_size*2
 block_size = 20
 tick_timer = None
 lines = 0
 
 # Clash is when block + block >31
+CLASH       = 31
 # Empty Blocks
 WHITE       = 0
 GRAY        = 1
@@ -22,6 +23,8 @@ YELLOW      = 21
 MAGENTA     = 22
 CYAN        = 23
 GREEN       = 24
+
+
 
 
 def debug_to_browser(text):
@@ -71,7 +74,7 @@ def paint_block(canvas_name, x, y, n):
 class PlayingGrid():
     def __init__(self):
         # This looks the wrong way around but it create an x,y array
-        self.grid = [[WHITE for x in range(w)] for y in range(h)]
+        self.grid = [[GRAY for x in range(w)] for y in range(h)]
         self.set_boarder()
     def set_boarder(self):
         for x in range(0, w):
@@ -97,15 +100,12 @@ class PlayingGrid():
                 self.grid.append(new_row)
             update_lines_complete(removed)
             self.set_boarder()
+            print(self.grid)
         return removed
-
-    def draw_inner_grid(self):
+    def draw_grid(self):
         for x in range(0,w):
             for y in range(0,h):
-                paint_block("grid", x, y, 
-                            self.grid[y][x])
-    def draw_grid(self):
-        self.draw_inner_grid()
+                paint_block("grid", x, y, self.grid[y][x])
 
 class Block():
     def __init__(self):
@@ -117,8 +117,8 @@ class Block():
         # Prep grid for rotating blocks
         self.grid = [[0 for x in range(4)] for y in range(4)]
         self.sytle_grid()
-        self.x = 0
-        self.y = 0
+        self.x = w/2 - 2
+        self.y = h - boarder_size
     def sytle_grid(self):
         # Rotation is counter-intuitive
         # if rotate "true", its skips left to right
@@ -171,66 +171,66 @@ class Block():
                          [ 0, YELLOW, YELLOW,  0], 
                          [ 0, YELLOW,      0,  0]]
         if self.style == 4 and self.rotation == 0:
-            self.grid = [[ 0,  0,  0,  0], 
-                         [ 0, MAGENTA,  0,  0], 
+            self.grid = [[      0,       0,       0,  0], 
+                         [      0, MAGENTA,       0,  0], 
                          [MAGENTA, MAGENTA, MAGENTA,  0], 
-                         [ 0,  0,  0,  0]]
+                         [      0,       0,       0,  0]]
         if self.style == 4 and self.rotation == 1:
-            self.grid = [[ 0,  0,  0,  0], 
-                         [ 0, MAGENTA,  0,  0], 
-                         [MAGENTA, MAGENTA,  0,  0], 
-                         [ 0, MAGENTA,  0,  0]]
+            self.grid = [[      0,       0,       0,  0], 
+                         [      0, MAGENTA,       0,  0], 
+                         [MAGENTA, MAGENTA,       0,  0], 
+                         [      0, MAGENTA,       0,  0]]
         if self.style == 4 and self.rotation == 2:
-            self.grid = [[ 0,  0,  0,  0], 
-                         [ 0,  0,  0,  0], 
+            self.grid = [[      0,       0,       0,  0], 
+                         [      0,       0,       0,  0], 
                          [MAGENTA, MAGENTA, MAGENTA,  0], 
-                         [ 0, MAGENTA,  0,  0]]
+                         [      0, MAGENTA,       0,  0]]
         if self.style == 4 and self.rotation == 3:
-            self.grid = [[ 0,  0,  0,  0], 
-                         [ 0, MAGENTA,  0,  0], 
-                         [ 0, MAGENTA, MAGENTA,  0], 
-                         [ 0, MAGENTA,  0,  0]]
+            self.grid = [[      0,       0,       0,  0], 
+                         [      0, MAGENTA,       0,  0], 
+                         [      0, MAGENTA, MAGENTA,  0], 
+                         [      0, MAGENTA,       0,  0]]
         # L
         if self.style == 5 and self.rotation == 0:
-            self.grid = [[ 0,  0,  0,  0], 
-                         [ 0,  0, CYAN,  0], 
+            self.grid = [[   0,    0,    0,  0], 
+                         [   0,    0, CYAN,  0], 
                          [CYAN, CYAN, CYAN,  0], 
-                         [ 0,  0,  0,  0]]
+                         [   0,    0,    0,  0]]
         if self.style == 5 and self.rotation == 1:
-            self.grid = [[ 0,  0,  0,  0], 
-                         [CYAN, CYAN,  0,  0], 
-                         [ 0, CYAN,  0,  0], 
-                         [ 0, CYAN,  0,  0]]
+            self.grid = [[   0,    0,    0,  0], 
+                         [CYAN, CYAN,    0,  0], 
+                         [   0, CYAN,    0,  0], 
+                         [   0, CYAN,    0,  0]]
         if self.style == 5 and self.rotation == 2:
-            self.grid = [[ 0,  0,  0,  0], 
-                         [ 0,  0,  0,  0], 
+            self.grid = [[   0,    0,    0,  0], 
+                         [   0,    0,    0,  0], 
                          [CYAN, CYAN, CYAN,  0], 
-                         [CYAN,  0,  0,  0]]
+                         [CYAN,    0,    0,  0]]
         if self.style == 5 and self.rotation == 3:
-            self.grid = [[ 0,  0,  0,  0], 
-                         [ 0, CYAN,  0,  0], 
-                         [ 0, CYAN,  0,  0], 
-                         [ 0, CYAN, CYAN,  0]]
+            self.grid = [[   0,    0,    0,  0], 
+                         [   0, CYAN,    0,  0], 
+                         [   0, CYAN,    0,  0], 
+                         [   0, CYAN, CYAN,  0]]
         if self.style == 6 and self.rotation == 0:
-            self.grid = [[ 0,  0,  0,  0], 
-                         [GREEN,  0,  0,  0], 
+            self.grid = [[    0,     0,     0,  0], 
+                         [GREEN,     0,     0,  0], 
                          [GREEN, GREEN, GREEN,  0], 
-                         [ 0,  0,  0,  0]]
+                         [    0,     0,     0,  0]]
         if self.style == 6 and self.rotation == 1:
-            self.grid = [[ 0,  0,  0,  0], 
-                         [ 0, GREEN,  0,  0], 
-                         [ 0, GREEN,  0,  0], 
-                         [GREEN, GREEN,  0,  0]]
+            self.grid = [[    0,     0,     0,  0], 
+                         [    0, GREEN,     0,  0], 
+                         [    0, GREEN,     0,  0], 
+                         [GREEN, GREEN,     0,  0]]
         if self.style == 6 and self.rotation == 2:
-            self.grid = [[ 0,  0,  0,  0], 
-                         [ 0,  0,  0,  0], 
+            self.grid = [[    0,     0,     0,  0], 
+                         [    0,     0,     0,  0], 
                          [GREEN, GREEN, GREEN,  0], 
-                         [ 0,  0, GREEN,  0]]
+                         [    0,     0, GREEN,  0]]
         if self.style == 6 and self.rotation == 3:
-            self.grid = [[ 0,  0,  0,  0], 
-                         [ 0, GREEN, GREEN,  0], 
-                         [ 0, GREEN,  0,  0], 
-                         [ 0, GREEN,  0,  0]]
+            self.grid = [[    0,     0,     0,  0], 
+                         [    0, GREEN, GREEN,  0], 
+                         [    0, GREEN,     0,  0], 
+                         [    0, GREEN,     0,  0]]
     def rotate_anticlock(self):
         self.rotation = self.rotation -1
         if self.rotation == -1:
@@ -244,8 +244,7 @@ class Block():
     def paint(self, canvas_name):
         for x in range(0,4):
             for y in range(0,4):
-                paint_block(canvas_name, x+self.x, y+self.y, 
-                            self.grid[y][x])
+                paint_block(canvas_name, x, y, self.grid[y][x])
 
 # Replace with function ?
 def paint_block_on_grid(offset_x, offset_y):
@@ -262,7 +261,7 @@ def clash_blocks():
     for x in range(0,4):
         for y in range(0,4):
             b = current_block.grid[y][x] + play_grid.grid[y+current_block.y][x+current_block.x]
-            if b>31:
+            if b>CLASH:
                 clash = True
     return clash
 
@@ -322,6 +321,7 @@ def key_code(ev):
 
 def stop_timer(ev):
     timer.clear_interval(tick_timer)
+    print(play_grid.grid)
 
 def start_timer(ev):
     tick_timer = timer.set_interval(tick, 500)
@@ -336,8 +336,6 @@ def tick():
            timer.clear_interval(tick_timer)
            alert("Game Over")
         current_block = next_block
-        current_block.x = w/2 - 2
-        current_block.y = h - boarder_size
         next_block = Block()
         next_block.paint("next") 
         play_grid.draw_grid()
@@ -356,8 +354,6 @@ def init():
     play_grid.draw_grid()
     update_lines_complete(0)
     next_block.paint("next")    
-    current_block.x = w/2 - 2
-    current_block.y = h - boarder_size
     tick_timer = timer.set_interval(tick, 500)
     document["stop"].bind('click',stop_timer)
     document.onkeydown = key_code
