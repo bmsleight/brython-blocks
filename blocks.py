@@ -34,6 +34,7 @@ def update_lines_complete(removed):
     document["total"].text = lines
 
 def paint_block(canvas_name, x, y, n):
+     
     if n == WHITE:
         fill_style = "White"
     elif n == GRAY:
@@ -61,7 +62,9 @@ def paint_block(canvas_name, x, y, n):
     if fill_style:
         canvas=document[canvas_name].getContext("2d")
         canvas.beginPath()
-        canvas.rect(x*block_size, y*block_size, block_size, block_size)
+        # Canvas 0,0 it top,left  not  bottom, left
+        # So we get the height and subtract our value
+        canvas.rect(x*block_size, document[canvas_name].height-y*block_size, block_size, block_size)
         canvas.fillStyle = fill_style 
         canvas.fill()
 
@@ -83,7 +86,9 @@ class PlayingGrid():
     def remove_complete_lines(self, by):
         removed = 0
         for row in self.grid[by:by+4]:
-            if not WHITE in row and not all(x == row[0] for x in row):
+            if not WHITE in row and \
+               not GRAY in row and  \
+               not all(x == row[0] for x in row):
                 self.grid.remove(row)
                 removed = removed + 1
         if removed:
