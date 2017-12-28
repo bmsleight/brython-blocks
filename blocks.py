@@ -1,7 +1,7 @@
 from browser import document, alert, html, timer
 from random import randint
 
-boarder_size = 4
+boarder_size = 5
 w = 10 + boarder_size*2
 h = 20 + boarder_size*2
 block_size = 20
@@ -9,8 +9,19 @@ block_size = 20
 WHITE = 0
 GRAY = 1
 BOARDER = 15
+BOARDER_TOP = 14
 
 tick_timer = None
+lines = 0
+
+def debug_to_browser(text):
+    debug = document["debug"]
+    debug.text = debug.text + str(text)
+
+def update_lines_complete(removed):
+    global lines
+    lines = lines + removed
+    document["total"].text = lines
 
 def paint_block(canvas_name, x, y, n):
     if canvas_name == "grid":
@@ -54,55 +65,49 @@ class PlayingGrid():
         self.set_boarder()
     def set_boarder(self):
         for x in range(0, boarder_size):
-            for y in range(0,h):
+            for y in range(0,h-boarder_size):
                 self.grid[y][x] = BOARDER
         for x in range(w-boarder_size, w):
-            for y in range(0,h):
+            for y in range(0,h-boarder_size):
                 self.grid[y][x] = BOARDER
+
+        for x in range(0, boarder_size):
+            for y in range(h-boarder_size,h):
+                self.grid[y][x] = BOARDER_TOP
+        for x in range(w-boarder_size, w):
+            for y in range(h-boarder_size,h):
+                self.grid[y][x] = BOARDER_TOP
+
+
         for x in range(0, w):
             for y in range(0,boarder_size):
                 self.grid[y][x] = BOARDER
+
+
+
+
     def remove_complete_lines(self, by):
         removed = 0
-        for y in range(by, by+4):
-            # All must be mote white and not the same (Boarder)
-            if not WHITE in self.grid[y] and \
-               not all(x == self.grid[y][0] for x in self.grid[y]):
-                self.grid.remove(self.grid[y])
+        for row in self.grid[by:by+4]:
+            if not WHITE in row and not all(x == row[0] for x in row):
+                self.grid.remove(row)
                 removed = removed + 1
-                new_row = [WHITE for x in range(w)]
-                self.grid.append(new_row)
         if removed:
+            new_row = [WHITE for x in range(w)]
+            for r in range(0, removed):
+                self.grid.append(new_row)
+            update_lines_complete(removed)
             self.set_boarder()
+        return removed
 
 
     def draw_inner_grid(self):
-        for x in range(boarder_size,w-boarder_size):
-            for y in range(boarder_size,h):
+        for x in range(0,w):
+            for y in range(0,h):
                 paint_block("grid", x, y, 
                             self.grid[y][x])
-    def draw_boarder(self):
-        for x in range(0, boarder_size):
-            for y in range(0,h):
-                paint_block("grid", x, y, 
-                            BOARDER)
-        for x in range(w-boarder_size, w):
-            for y in range(0,h):
-                paint_block("grid", x, y, 
-                            BOARDER)
-        for x in range(0, w):
-            for y in range(0,boarder_size):
-                paint_block("grid", x, y, 
-                            BOARDER)
-        for x in range(0, w):
-            for y in range(h-boarder_size, h):
-                paint_block("grid", x, y, 
-                            BOARDER)
     def draw_grid(self):
-        self.draw_boarder()
         self.draw_inner_grid()
-        
-
 
 class Block():
     def __init__(self):
@@ -324,12 +329,14 @@ def stop_timer(ev):
 def start_timer(ev):
     tick_timer = timer.set_interval(tick, 500)
 
-
 def tick():
     global current_block, next_block
     if not test_new_position("down"):
         freeze_current_block()
-        play_grid.remove_complete_lines(current_block.y)
+        if not play_grid.remove_complete_lines(current_block.y) and \
+           not current_block.y < (h - boarder_size):
+            timer.clear_interval(tick_timer)
+            alert("Game Over")
         current_block = next_block
         current_block.x = w/2 - 2
         current_block.y = h - boarder_size
@@ -349,18 +356,18 @@ def init():
       alert('An error occured creating a Canvas 2D context. '
           'This may be because you are using an old browser')
     play_grid.draw_grid()
+    update_lines_complete(0)
     next_block.paint("next")    
     current_block.x = w/2 - 2
     current_block.y = h - boarder_size
     tick_timer = timer.set_interval(tick, 500)
+    document["stop"].bind('click',stop_timer)
+    document.onkeydown = key_code
+
 
 play_grid = PlayingGrid()
 current_block = Block()
 next_block = Block()
-
 init()
 
-
-document["stop"].bind('click',stop_timer)
-document.onkeydown = key_code
 
