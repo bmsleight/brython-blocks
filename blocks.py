@@ -1,6 +1,7 @@
 from browser import document, alert, html, timer
 from random import randint
 
+# Globals
 boarder_size = 5
 w = 10 + boarder_size*2
 h = 15 + boarder_size*2
@@ -13,6 +14,8 @@ CLASH       = 31
 # Empty Blocks
 WHITE       = 0
 GRAY        = 1
+
+BLOCK_HARD  = 15
 # Hard Blocks
 BOARDER     = 16
 BOARDER_TOP = 17
@@ -25,8 +28,6 @@ CYAN        = 23
 GREEN       = 24
 
 
-
-
 def debug_to_browser(text):
     debug = document["debug"]
     debug.text = debug.text + str(text)
@@ -37,7 +38,6 @@ def update_lines_complete(removed):
     document["total"].text = lines
 
 def paint_block(canvas_name, x, y, n):
-     
     if n == WHITE:
         fill_style = "White"
     elif n == GRAY:
@@ -81,10 +81,10 @@ class PlayingGrid():
             for y in range(0, boarder_size):
                 self.grid[y][x] = BOARDER
         for x in range(0, boarder_size):
-            for y in range(0, h-boarder_size):
+            for y in range(0, h):
                 self.grid[y][x] = BOARDER
         for x in range(w-boarder_size, w):
-            for y in range(0, h-boarder_size):
+            for y in range(0, h):
                 self.grid[y][x] = BOARDER
     def remove_complete_lines(self, by):
         removed = 0
@@ -95,12 +95,12 @@ class PlayingGrid():
                 self.grid.remove(row)
                 removed = removed + 1
         if removed:
-            new_row = [WHITE for x in range(w)]
             for r in range(0, removed):
+                # Need a real new row - not the same one added
+                new_row = [GRAY for x in range(w)]
                 self.grid.append(new_row)
             update_lines_complete(removed)
             self.set_boarder()
-            print(self.grid)
         return removed
     def draw_grid(self):
         for x in range(0,w):
@@ -123,8 +123,6 @@ class Block():
         # Rotation is counter-intuitive
         # if rotate "true", its skips left to right
         #    So we precalculate the rotations so make them better
-        #Debug
-        # document["details"].text = str(self.style) + " " + str(self.rotation)
         #I
         if self.style == 0 and \
           (self.rotation == 0 or self.rotation == 2):
@@ -247,13 +245,15 @@ class Block():
                 paint_block(canvas_name, x, y, self.grid[y][x])
 
 # Replace with function ?
-def paint_block_on_grid(offset_x, offset_y):
+def paint_block_on_grid():
     for x in range(-1,5):
         for y in range(-1,5):
-            if ((x == -1 or x == 4) or (y == -1 or y == 4)):
+            if ((x == -1 or x == 4) \
+               or (y == -1 or y == 4)) \
+               or (current_block.grid[y][x]<=BLOCK_HARD):
                 n = play_grid.grid[current_block.y + y][current_block.x + x]
             else:
-                n = current_block.grid[y][x] + play_grid.grid[current_block.y + y][current_block.x + x]
+                n = current_block.grid[y][x]
             paint_block("grid", x+current_block.x, y+current_block.y, n)
 
 def clash_blocks():
@@ -268,21 +268,16 @@ def clash_blocks():
 def freeze_current_block():
     for x in range(0,4):
         for y in range(0,4):
-            if current_block.grid[y][x] > 15:
+            if current_block.grid[y][x] > BLOCK_HARD:
                 play_grid.grid[y+current_block.y][x+current_block.x] = current_block.grid[y][x]
 
 def test_new_position(movement):
-    offset_x = 0
-    offset_y = 0
     if movement == "left":
         current_block.x = current_block.x -1
-        offset_x = +1
     elif movement == "right":
         current_block.x = current_block.x +1
-        offset_x = -1
     elif movement == "down":
         current_block.y = current_block.y -1
-        offset_y = -1
     elif movement == "rotate_c":
         current_block.rotate_clock()
     else:
@@ -301,7 +296,7 @@ def test_new_position(movement):
             current_block.rotate_anticlock()
             return False
     else:
-        paint_block_on_grid(offset_x, offset_y)
+        paint_block_on_grid()
         return True
 
 def key_code(ev):
@@ -321,13 +316,12 @@ def key_code(ev):
 
 def stop_timer(ev):
     timer.clear_interval(tick_timer)
-    print(play_grid.grid)
 
 def start_timer(ev):
     tick_timer = timer.set_interval(tick, 500)
 
 def tick():
-    global current_block, next_block
+    global current_block, next_block, play_grid
     if not test_new_position("down"):
         freeze_current_block()
         play_grid.remove_complete_lines(current_block.y)
